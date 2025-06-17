@@ -1,40 +1,20 @@
-import ModelClient, { isUnexpected } from "@azure-rest/ai-inference";
-import { AzureKeyCredential } from "@azure/core-auth";
+// /api/tweet.js
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const endpoint = "https://models.github.ai/inference";
-const model = "openai/gpt-4.1";
-const apiKey = process.env.AZURE_API_KEY;
+const ai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 export default async function handler(req, res) {
-  if (req.method !== "GET") {
-    return res.status(405).json({ message: "Method Not Allowed" });
+  try {
+    const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const result = await model.generateContent(
+      "Create a tweet on a trending topic on X (formerly Twitter). Make it concise and engaging."
+    );
+    const response = await result.response;
+    const text = await response.text();
+
+    res.status(200).send(text);
+  } catch (err) {
+    console.error("Gemini error:", err);
+    res.status(500).send("Failed to generate tweet.");
   }
-
-  const client = ModelClient(endpoint, new AzureKeyCredential(apiKey));
-
-  const response = await client.path("/chat/completions").post({
-    body: {
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are a social media expert. Generate an engaging tweet about a trending topic on X.",
-        },
-        {
-          role: "user",
-          content: "Create a tweet on trending topic on X",
-        },
-      ],
-      temperature: 1.0,
-      top_p: 1.0,
-      model,
-    },
-  });
-
-  if (isUnexpected(response)) {
-    return res.status(500).json({ error: response.body.error });
-  }
-
-  const tweet = response.body.choices[0].message.content;
-  res.status(200).send(tweet);
 }
