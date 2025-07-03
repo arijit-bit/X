@@ -6,7 +6,7 @@ generate.addEventListener("click", async () => {
     return;
   }
 
-  for (let index = 0; index < 5; index++) {
+  for (let index = 0; index <2; index++) {
     try {
       const response = await fetch("/api/tweet");
       const tweet = await response.text();
